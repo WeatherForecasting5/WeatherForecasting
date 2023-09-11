@@ -75,3 +75,4 @@ else:
 
     # Задаём подписи при наведении на точку
     fig.update_traces(hoverinfo="all", hovertemplate="Дата: %{x}<br>Температура: %{y}")
+    st.plotly_chart(fig, theme="streamlit", use_container_width=True)
