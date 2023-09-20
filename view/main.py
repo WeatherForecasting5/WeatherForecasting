@@ -1,12 +1,16 @@
+import datetime
 import streamlit as st
 import pandas as pd
 import plotly.graph_objs as go
-import plotly.express as px
 from streamlit_lottie import st_lottie
 from lottie_animation import load_lottie_url
+import graphics
 
 # Папка с данными
 data_folder = '../Filtering_data/'
+
+# Формат даты
+date_format = '%d.%m.%Y'
 
 # Устанавливаем настройки страницы
 st.set_page_config(page_title='Прогноз погоды', page_icon='images/sun-icon.png', layout='wide')
@@ -21,13 +25,11 @@ with image_box:
 with header_box:
     st.header('Прогноз погоды')
 
-# Считываем исходные данные, преобразуя столбцы сразу в DateTime
-source_df = pd.read_csv(data_folder + 'source_df.csv', parse_dates=[[0, 1, 2]])
-filtered_df = pd.read_csv(data_folder + 'filtered_df.csv', parse_dates=[[0, 1, 2]])
-
-# Преобразуем столбец Date_Month_Year в Date для вывода графиков
-source_df = source_df.rename(columns={'Date_Month_Year': 'Date'})
-filtered_df = filtered_df.rename(columns={'Date_Month_Year': 'Date'})
+# Считываем исходные данные, преобразуя столбцы в DateTime
+source_df = pd.read_csv(data_folder + 'source_df.csv')
+source_df['Date'] = pd.to_datetime(source_df['Date'], format=date_format)
+filtered_df = pd.read_csv(data_folder + 'filtered_df.csv')
+filtered_df['Date'] = pd.to_datetime(filtered_df['Date'], format=date_format)
 
 cities = source_df.columns[1::]
 
@@ -45,34 +47,54 @@ with st.sidebar:
 
 # Вывод информации обо всех городах
 if city_selectbox == 'Общая информация':
-    fig = px.line(
-        source_df,
-        x='Date',
-        y=source_df.columns[1::],
-        title='Погода по всем городам',
-    )
-    st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+    graphics.main_graphic(source_df, 'Погода по всем городам')
+
 else:
     st.write(f'### Прогноз по городу {city_selectbox}')
 
-    # График отфильтрованной температуры по городам (см. GROUP #5 Roadmap, ВИЗУАЛИЗАЦИЯ ДАННЫХ (ГРАФИКИ))
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=source_df['Date'],
-                             y=source_df[city_selectbox],
-                             name='Данные с выбросами',
-                             line=dict(color='grey')))
-    fig.add_trace(go.Scatter(x=filtered_df['Date'],
-                             y=filtered_df[city_selectbox],
-                             name='Отфильтрованные данные'))
+    st.write('Здесь хотелось бы видеть табы для прогноза из 3 разделов:')
+    st.write('1. На день')
+    st.write('2. На неделю')
+    st.write('3. На месяц')
+    st.write('День выбирается при помощи виджета-календаря (ниже)')
 
-    # Задаём настройки: убираем отступы, переносим легенду вниз, подписываем оси и т.п.
-    fig.update_layout(legend_orientation="h",
-                      legend=dict(x=.5, xanchor="center"),
-                      title="График с отфильтрованными данными и выбросами",
-                      xaxis_title="Дата",
-                      yaxis_title="Температура",
-                      margin=dict(l=30, r=30, t=30, b=30))
+    date = st.date_input("Выберите день, на который нужно предсказать температуру:",
+                         value=datetime.date(2023, 1, 1),
+                         min_value=datetime.date(2023, 1, 1),
+                         max_value=datetime.date(2023, 12, 31),
+                         format='DD.MM.YYYY')
 
-    # Задаём подписи при наведении на точку
-    fig.update_traces(hoverinfo="all", hovertemplate="Дата: %{x}<br>Температура: %{y}")
-    st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+    # Аккордеон с графиками
+    with st.expander('Вывести графики'):
+        # Подписи при наведении на график
+        hover_template = 'Дата: %{x}<br>Температура: %{y}'
+
+        # График отфильтрованной температуры по городам (см. GROUP #5 Roadmap, ВИЗУАЛИЗАЦИЯ ДАННЫХ (ГРАФИКИ))
+        fig = go.Figure()
+
+        # Добавляем линии - график с выбросами и без
+        fig = graphics.city_trace(fig, source_df, 'Данные с выбросами', city_selectbox, color='gray')
+        fig = graphics.city_trace(fig, filtered_df, 'Отфильтрованные данные', city_selectbox)
+
+        # Задаём настройки: убираем отступы, переносим легенду вниз, подписываем оси и т.п.
+        fig = graphics.set_layout(fig, 'График с отфильтрованными данными и выбросами')
+
+        # Задаём подписи при наведении на точку
+        fig.update_traces(hoverinfo="all", hovertemplate=hover_template)
+        st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+
+        # График для медианы по месяцам
+        df_group_by_year_and_month = filtered_df.groupby([filtered_df['Date'].dt.year, filtered_df['Date'].dt.month])
+        df_grouped_mean = df_group_by_year_and_month.mean()
+
+        fig_mean = go.Figure()
+
+        # Добавляем линию с медианой за 20 лет
+        fig_mean = graphics.city_trace(fig_mean, df_grouped_mean, 'Медиана по месяцам', city_selectbox)
+
+        # Задаём настройки: убираем отступы, переносим легенду вниз, подписываем оси и т.п.
+        fig_mean = graphics.set_layout(fig_mean, 'Медиана по месяцам за каждый год')
+
+        # Задаём подписи при наведении на точку
+        fig_mean.update_traces(hoverinfo="all", hovertemplate=hover_template)
+        st.plotly_chart(fig_mean, theme="streamlit", use_container_width=True)

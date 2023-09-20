@@ -1,4 +1,5 @@
 # peewee documentation: peewee.readthedocs.io/en/latest/peewee/models.html
+import sqlite3
 from peewee import *
 
 # Set Database
