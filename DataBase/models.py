@@ -28,6 +28,9 @@ class City(BaseModel):
 class Configuration(BaseModel):
     name = CharField()
 
+    class Meta:
+        db_table = 'configurations'
+
 class Source(BaseModel):
     date = DateField()
     city_id = ForeignKeyField(City)

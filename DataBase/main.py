@@ -1,11 +1,11 @@
-import datetime
 from models import *
+import pandas as pd
+import os
+import datetime
 
-# Core Functionality
+# DB model Initialising
 with db:
     db.create_tables([Type, City, Configuration, Source])
-<<<<<<< HEAD
-=======
 
 # 'types' table data filling
 data_type = [
@@ -112,4 +112,3 @@ with db.atomic():
             Source.type_id, 
             Source.config_id
         ]).execute()
->>>>>>> 8e94785b2a0515f1b30321ff983a7cc5d297eef2
