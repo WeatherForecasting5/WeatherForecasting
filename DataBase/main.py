@@ -1,4 +1,5 @@
 from models import *
+from filtering import *
 import pandas as pd
 import os
 import datetime
@@ -18,9 +19,6 @@ with db.atomic():
     Type.insert_many(data_type, fields=[Type.id, Type.name]).execute()
 
 # 'cities' table data filling
-current_directory = os.path.dirname(__file__)
-csv_file_path = os.path.join(current_directory, '../Filtering_data/source_df.csv')
-source_df = pd.read_csv(csv_file_path)
 city_list = list(source_df.columns[1:])
 data_city = list()  # data to writing into the DB
 count = 1
@@ -37,20 +35,18 @@ with db.atomic():
 data_config = [
     (1, 'original'),
     (2, 'random forrest model'),
-    (3, 'xgbust model'),
+    (3, 'xgboost model'),
     (4, 'tbats model')
 ]
 
 with db.atomic():
     Configuration.insert_many(data_config, fields=[Configuration.id, Configuration.name]).execute()
 
-################### Pre-filtered data for 'sources' table
-################### id, date, city_id, weather, type_id, config_id
+# Pre-filtered data for 'sources' table
 data_source = list() # main pre-filtered data container
 
 type_id = data_type[0][0]  # 1: pre-filtered
 config_id = data_config[0][0]  # 1: original
-
 count = 1
 
 for i in range(len(data_city)):
@@ -77,16 +73,11 @@ with db.atomic():
             Source.config_id
         ]).execute()
 
-#################### Filtered data for 'sources' table
-#################### id, date, city_id, weather, type_id, config_id
-csv_file_path = os.path.join(current_directory, '../Filtering_data/filtered_df.csv')
-filtered_df = pd.read_csv(csv_file_path)
-
+# Filtered data for 'sources' table
 data_filtered = list()  # main filtered data container
 
 type_id = data_type[1][0]  # 2: 'filtered' type of data (after filtering)
 config_id = data_config[0][0]  # 1: original
-
 f_count = len(source_df) * len(data_city) + 1
 
 for i in range(len(data_city)):
@@ -98,8 +89,6 @@ for i in range(len(data_city)):
         f_source = (f_count, date, city_id, weather, type_id, config_id)
         data_filtered.append(f_source)
         f_count += 1
-
-batch_size = 1000
 
 with db.atomic():
     for i in range(0, len(data_filtered), batch_size):

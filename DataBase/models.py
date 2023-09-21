@@ -13,11 +13,13 @@ class BaseModel(Model):
         database = db
         order_by = 'id'
 
+
 class Type(BaseModel):
     name = CharField()
 
     class Meta:
         db_table = 'types'  # table's name
+
 
 class City(BaseModel):
     name = CharField()
@@ -25,11 +27,13 @@ class City(BaseModel):
     class Meta:
         db_table = 'cities'
 
+
 class Configuration(BaseModel):
     name = CharField()
 
     class Meta:
         db_table = 'configurations'
+
 
 class Source(BaseModel):
     date = DateField()
