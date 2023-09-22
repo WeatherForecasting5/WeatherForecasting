@@ -1,5 +1,4 @@
 # peewee documentation: peewee.readthedocs.io/en/latest/peewee/models.html
-import sqlite3
 from peewee import *
 
 # Set Database
@@ -28,19 +27,11 @@ class City(BaseModel):
         db_table = 'cities'
 
 
-class Configuration(BaseModel):
-    name = CharField()
-
-    class Meta:
-        db_table = 'configurations'
-
-
 class Source(BaseModel):
     date = DateField()
     city_id = ForeignKeyField(City)
     weather = FloatField()
     type_id = ForeignKeyField(Type)
-    config_id = ForeignKeyField(Configuration)
 
     class Meta:
         db_table = 'sources'
