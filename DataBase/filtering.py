@@ -5,8 +5,8 @@ import pandas as pd
 # Pre-filtering data (adding data)
 from datetime import datetime, timedelta, date
 
-start_date = date(2003, 1, 1)
-end_date = date(2022, 12, 31)
+start_date = date(2003, 1, 1)  # 2003-01-01
+end_date = date(2022, 12, 31)  # 2003-01-01
 
 dates_list = []
 

@@ -19,7 +19,7 @@ for year in range(2003, 2023):
                 years.append(year)
 
 data = pd.DataFrame()
-data['Date'] = days
+data['Day'] = days
 data['Month'] = months
 data['Year'] = years
 
