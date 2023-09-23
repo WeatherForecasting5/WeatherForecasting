@@ -1,5 +1,8 @@
+import sys
+sys.path.append('../WeatherForecasting/forecasting')
 from models import *
 from filtering import *
+from result_model_xgb import *
 import pandas as pd
 
 # DB model Initialising
@@ -79,6 +82,33 @@ for i in range(len(data_city)):
 with db.atomic():
     for i in range(0, len(data_filtered), batch_size):
         batch = data_filtered[i:i + batch_size]
+        Source.insert_many(batch, fields=[
+            Source.id, 
+            Source.date, 
+            Source.city_id, 
+            Source.weather, 
+            Source.type_id, 
+        ]).execute()
+
+# Forecasted data for 'sources' table. Using 'xgboost' model's data
+data_predicted = list()  # main forecasted data container for importing into the DB
+
+ptype_id = data_type[3][0]  # 4: 'xgboost' type of data (after filtering)
+p_count = f_count + 1
+
+for i in range(len(data_city)):
+    for j in range(len(pred_df)):
+        city_name = data_city[i][1]
+        weather = pred_df[city_name][j]  # one weather value
+        date = pred_df['Date'][j]
+        city_id = data_city[i][0]  # take an id of the city
+        f_source = (p_count, date, city_id, weather, ptype_id)
+        data_predicted.append(f_source)
+        p_count += 1
+
+with db.atomic():
+    for i in range(0, len(data_predicted), batch_size):
+        batch = data_predicted[i:i + batch_size]
         Source.insert_many(batch, fields=[
             Source.id, 
             Source.date, 
