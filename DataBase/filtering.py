@@ -3,10 +3,10 @@ import json
 import pandas as pd
 
 # Pre-filtering data (adding data)
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
-start_date = datetime(2003, 1, 1)
-end_date = datetime(2022, 12, 31)
+start_date = date(2003, 1, 1)
+end_date = date(2022, 12, 31)
 
 dates_list = []
 
@@ -17,7 +17,7 @@ while current_date <= end_date:
     if current_date.month == 2 and current_date.day == 29:
         pass
     else:
-        dates_list.append(current_date.strftime("%d.%m.%Y"))
+        dates_list.append(current_date)
     
     current_date += timedelta(days=1)  # move next day
 
