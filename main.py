@@ -44,23 +44,43 @@ with st.sidebar:
 
 # Вывод информации обо всех городах
 if city_selectbox == 'Общая информация':
-    main_graphic(source_df, 'Погода по всем городам')
+    main_graphic(source_df, 'Погода по всем городам (без фильтрации)')
 
 else:
     st.write(f'### Прогноз по городу {city_selectbox}')
 
+    default_date = datetime.date(2023, 1, 1)
+    max_date = datetime.date(2023, 12, 31)
     date = st.date_input("Выберите день, на который нужно предсказать температуру:",
-                         value=datetime.date(2023, 1, 1),
-                         min_value=datetime.date(2023, 1, 1),
-                         max_value=datetime.date(2023, 12, 31),
+                         value=default_date,
+                         min_value=default_date,
+                         max_value=max_date,
                          format='DD.MM.YYYY')
 
-    show_tabs(date)
+    # Выводим прогнозы на день, на неделю, на месяц
+    forecasted_df_by_month = get_forecast_by_month(date, max_date)
+    show_tabs(date, max_date, forecasted_df_by_month, city_selectbox)
+
+    # Теперь получим данные на весь год для вывода графиков
+    forecasted_df = get_df(4)  # 4 - xgboost
 
     # Аккордеон с графиками
     with st.expander('Вывести графики'):
         # Подписи при наведении на график
         hover_template = 'Дата: %{x}<br>Температура: %{y}'
+
+        # График с предсказанной температурой на год
+        fig_forecasted = go.Figure()
+        fig_forecasted = city_trace(fig_forecasted, forecasted_df, 'Спрогнозированные данные', city_selectbox,
+                                    color='lightpink')
+
+        # Задаём настройки и подписи к графику
+        fig_forecasted = set_layout(fig_forecasted,
+                                    f'График со спрогнозированными данными на 2023 год для города {city_selectbox}')
+
+        # Задаём подписи при наведении на точку, выводим график
+        fig_forecasted.update_traces(hoverinfo="all", hovertemplate=hover_template)
+        st.plotly_chart(fig_forecasted, theme="streamlit", use_container_width=True)
 
         # График отфильтрованной температуры по городам (см. GROUP #5 Roadmap, ВИЗУАЛИЗАЦИЯ ДАННЫХ (ГРАФИКИ))
         fig = go.Figure()
@@ -76,17 +96,17 @@ else:
         fig.update_traces(hoverinfo="all", hovertemplate=hover_template)
         st.plotly_chart(fig, theme="streamlit", use_container_width=True)
 
-        # График для медианы по месяцам
-        df_group_by_year_and_month = filtered_df.groupby([filtered_df['Date'].dt.year, filtered_df['Date'].dt.month])
+        # График для медианы по годам
+        df_group_by_year_and_month = filtered_df.groupby(filtered_df['Date'].dt.year)
         df_grouped_mean = df_group_by_year_and_month.mean()
 
         fig_mean = go.Figure()
 
         # Добавляем линию с медианой за 20 лет
-        fig_mean = city_trace(fig_mean, df_grouped_mean, 'Медиана по месяцам', city_selectbox)
+        fig_mean = city_trace(fig_mean, df_grouped_mean, 'Медиана по годам за 20 лет', city_selectbox)
 
         # Задаём настройки: убираем отступы, переносим легенду вниз, подписываем оси и т.п.
-        fig_mean = set_layout(fig_mean, 'Медиана по месяцам за каждый год')
+        fig_mean = set_layout(fig_mean, 'Медиана по каждому году')
 
         # Задаём подписи при наведении на точку
         fig_mean.update_traces(hoverinfo="all", hovertemplate=hover_template)
